@@ -1,0 +1,27 @@
+pwscraper/
+├── config/
+│   └── logging.conf
+│   └── platforms.json
+├── datasets/
+│   ├── processed/
+│   ├── raw/
+├── logs/
+│   └── activity.log
+│   └── error.log
+├── pwscraper/
+│   └── __init__.py
+│   └── exceptions.py
+│   └── main.py
+│   └── models.py
+│   └── scraper.py
+│   └── storage.py
+│   └── utils.py
+├── tests/
+│   └── test_scraper.py
+│   └── test_utils.py
+└── .gitignore
+└── README.md
+└── project_stx.txt
+└── requirements.txt
+└── setup.py
+└── stx.py

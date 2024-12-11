@@ -1,1 +1,66 @@
 # scraper.py: Scraper logic (scraper.py) to handle asynchronous scraping and retry mechanisms.
+# pwscraper/scraper.py
+
+import json
+import aiohttp
+import asyncio
+from bs4 import BeautifulSoup
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+class VideoScraper:
+    def __init__(self, platforms_config, output_dir):
+        with open(platforms_config, "r") as file:
+            try:
+                config = json.load(file)
+                if "platforms" not in config or not isinstance(config["platforms"], list):
+                    raise ValueError("Invalid configuration: 'platforms' key missing or not a list.")
+                self.platforms = config["platforms"]
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Failed to parse JSON configuration: {e}")
+        self.output_dir = output_dir
+
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=1, max=10))
+    async def fetch_page(self, session, url):
+        try:
+            async with session.get(url) as response:
+                if response.status in [500, 503]:
+                    raise Exception(f"Temporary server error {response.status} for {url}")
+                elif response.status != 200:
+                    raise Exception(f"Failed to fetch {url}, status code: {response.status}")
+                return await response.text()
+        except aiohttp.ClientError as e:
+            raise Exception(f"HTTP request failed for {url}: {e}")
+
+    async def scrape_platform(self, session, platform):
+        videos = []
+        try:
+            html = await self.fetch_page(session, platform["url"])
+            soup = BeautifulSoup(html, "html.parser")
+
+            # Custom scraping logic based on platform structure
+            for video_tag in soup.find_all("div", class_="video-item"):
+                title = video_tag.find("h3").text
+                description = video_tag.find("p", class_="description").text
+                video_url = video_tag.find("a", class_="video-link")["href"]
+                videos.append({"title": title, "description": description, "url": video_url})
+        except Exception as e:
+                    print(f"Error scraping {platform['name']}: {e}")
+        return videos
+    
+    async def run(self):
+        tasks = []
+        async with aiohttp.ClientSession() as session:
+            for platform in self.platforms:
+                tasks.append(self.scrape_platform(session, platform))
+            try:
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                processed_results = []
+                for result in results:
+                    if isinstance(result, Exception):
+                        print(f"Task resulted in an exception: {result}")
+                    else:
+                        processed_results.extend(result)
+                return processed_results
+            except Exception as e:
+                print(f"Critical error during scraping: {e}")
+                return []

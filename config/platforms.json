@@ -1,0 +1,9 @@
+{
+    "platforms": [
+        {
+            "name": "Youtube",
+            "url": "https://youtube.com/videos",
+            "scrape_limit": 100
+        }
+    ]
+}
