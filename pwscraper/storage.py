@@ -1,0 +1,1 @@
+# storage.py : Storage module (storage.py) to save the scraped data.

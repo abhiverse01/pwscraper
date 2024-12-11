@@ -1,0 +1,1 @@
+# scraper.py: Scraper logic (scraper.py) to handle asynchronous scraping and retry mechanisms.
