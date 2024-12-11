@@ -2,7 +2,7 @@
     "platforms": [
         {
             "name": "Youtube",
-            "url": "",
+            "url": "https://www.youtube.com/watch?v=l9H9wX2AJPc",
             "scrape_limit": 100
         }
     ]
