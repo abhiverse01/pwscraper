@@ -9,14 +9,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 class VideoScraper:
     def __init__(self, platforms_config, output_dir):
-        with open(platforms_config, "r") as file:
-            try:
-                config = json.load(file)
-                if "platforms" not in config or not isinstance(config["platforms"], list):
-                    raise ValueError("Invalid configuration: 'platforms' key missing or not a list.")
-                self.platforms = config["platforms"]
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Failed to parse JSON configuration: {e}")
+        self.platforms = platforms_config["platforms"]
         self.output_dir = output_dir
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=1, max=10))
@@ -44,9 +37,9 @@ class VideoScraper:
                 video_url = video_tag.find("a", class_="video-link")["href"]
                 videos.append({"title": title, "description": description, "url": video_url})
         except Exception as e:
-                    print(f"Error scraping {platform['name']}: {e}")
+            print(f"Error scraping {platform['name']}: {e}")
         return videos
-    
+
     async def run(self):
         tasks = []
         async with aiohttp.ClientSession() as session:
