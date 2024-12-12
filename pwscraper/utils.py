@@ -16,17 +16,18 @@ def setup_logging():
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-def validate_config(config_path):
+def validate_config(config_path: str) -> dict:
     if not os.path.exists(config_path):
-        raise FileNotFoundError(
-            f"Configuration file not found: {config_path}. "
-            "Ensure the file exists and contains valid platform configurations."
-        )
+        raise FileNotFoundError(f"Configuration file not found: {config_path}.")
+    
     with open(config_path, "r") as file:
         try:
             config = json.load(file)
             if "platforms" not in config or not isinstance(config["platforms"], list):
                 raise ValueError("Invalid configuration: 'platforms' key missing or not a list.")
+            for platform in config["platforms"]:
+                if not all(key in platform for key in ("name", "url", "scrape_limit")):
+                    raise ValueError(f"Invalid platform configuration: {platform}")
             return config
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON configuration: {e}")
