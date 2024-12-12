@@ -18,7 +18,10 @@ def setup_logging():
 
 def validate_config(config_path):
     if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        raise FileNotFoundError(
+            f"Configuration file not found: {config_path}. "
+            "Ensure the file exists and contains valid platform configurations."
+        )
     with open(config_path, "r") as file:
         try:
             config = json.load(file)
