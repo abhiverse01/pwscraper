@@ -8,39 +8,37 @@ import logging # The `logging` module defines functions and classes which implem
 
 logger = logging.getLogger(__name__) # Create a logger instance for the main module.
 
+async def main():
+    setup_logging()
+    logger.info("Starting the scraping process.")
 
-async def main(): # Define the main coroutine function.
-    setup_logging() # Call the setup_logging function to configure logging.
-    logger.info("Starting the scraping process.") # Log an informational message for the start of the scraping process.
+    config_path = "config/platforms.json"
+    config = None  # Initialize to avoid UnboundLocalError
 
-    config_path = "config/platforms.json" # Path to the configuration file.
-
-    try: 
-        config = validate_config(config_path) # Load and validate the configuration file.
+    try:
+        config = validate_config(config_path)
+    except FileNotFoundError as e:
+        logger.error(f"Configuration file not found: {e}")
+        return
     except ValueError as e:
         logger.error(f"Invalid configuration: {e}")
-    except Exception as e:
-        logger.error(f'Configuration Validation failed: {e}')
+        return
 
+    scraper = VideoScraper(platforms_config=config, output_dir="datasets/raw")
 
-    scraper = VideoScraper(platforms_config=config, output_dir="datasets/raw") # Create an instance of the VideoScraper class.
+    try:
+        scraped_data = await scraper.run()
 
-    try: 
-        scraped_data = await scraper.run() # Scrape data from all platforms.
         if not scraped_data:
-            logger.warning("No data scraped. Exiting without Scrape")
+            logger.warning("No data was scraped. Exiting.")
             return
-        
-        scraper = VideoScraper.deduplicate_data(scraped_data) # Deduplicate the scraped data.
-        save_dataset(scraped_data, output_file="datasets/processed/videos_dataset.csv", format="csv") # Save the processed data to a CSV file.
 
-
-
+        scraped_data = VideoScraper.deduplicate_data(scraped_data)
+        save_dataset(scraped_data, output_file="datasets/processed/videos_dataset.csv", format="csv")
     except Exception as e:
-        logger.critical(f'An Unhandled error occurred during scraping, {e}', exc_info=True)
+        logger.critical(f"An unhandled error occurred during scraping: {e}", exc_info=True)
     finally:
-        logger.info("Scraping process completed.") # Log an informational message for the completion of the scraping process.
-
+        logger.info("Scraping process finished.")
 
 if __name__ == "__main__":
-    asyncio.run(main()) # Run the main coroutine function using asyncio.
+    asyncio.run(main())
