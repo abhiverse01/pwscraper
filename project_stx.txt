@@ -4,11 +4,18 @@ pwscraper/
 │   └── platforms.json
 ├── datasets/
 │   ├── processed/
+│   │   └── videos_dataset.csv
 │   ├── raw/
 ├── logs/
 │   └── activity.log
 │   └── error.log
 ├── pwscraper/
+│   ├── config/
+│   │   └── platforms.json
+│   ├── datasets/
+│   │   ├── raw/
+│   ├── logs/
+│   │   └── activity.log
 │   └── __init__.py
 │   └── exceptions.py
 │   └── main.py
@@ -17,6 +24,7 @@ pwscraper/
 │   └── storage.py
 │   └── utils.py
 ├── tests/
+│   └── __init__.py
 │   └── test_scraper.py
 │   └── test_utils.py
 └── .gitignore
