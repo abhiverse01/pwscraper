@@ -5,6 +5,9 @@ from scraper import VideoScraper # Import the VideoScraper class from the scrape
 from utils import setup_logging, validate_config # Import the setup_logging and validate_config functions from the utils module.
 from storage import save_dataset # Import the save_dataset function from the storage module.
 import logging # The `logging` module defines functions and classes which implement a flexible event logging system for applications and libraries.
+from pwscraper.scraper import VideoScraper
+from pwscraper.utils import setup_logging, validate_config
+from pwscraper.storage import save_dataset
 
 logger = logging.getLogger(__name__) # Create a logger instance for the main module.
 
@@ -12,16 +15,14 @@ async def main():
     setup_logging()
     logger.info("Starting the scraping process.")
 
-    config_path = "config/platforms.json"
-    config = None  # Initialize to avoid UnboundLocalError
+    config_path = "pwscraper/config/platforms.json"
+    config = None
 
     try:
         config = validate_config(config_path)
-    except FileNotFoundError as e:
-        logger.error(f"Configuration file not found: {e}")
-        return
-    except ValueError as e:
-        logger.error(f"Invalid configuration: {e}")
+        logger.info(f"Configuration loaded successfully: {config['platforms']}")
+    except Exception as e:
+        logger.error(f"Configuration validation failed: {e}")
         return
 
     scraper = VideoScraper(platforms_config=config, output_dir="datasets/raw")
@@ -33,6 +34,7 @@ async def main():
             logger.warning("No data was scraped. Exiting.")
             return
 
+        logger.info(f"Scraped data: {scraped_data}")
         scraped_data = VideoScraper.deduplicate_data(scraped_data)
         save_dataset(scraped_data, output_file="datasets/processed/videos_dataset.csv", format="csv")
     except Exception as e:
