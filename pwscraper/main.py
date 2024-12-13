@@ -1,13 +1,11 @@
 # PWscraper/main.py
 
 import asyncio # `asyncio` is a library to write concurrent code using the async/await syntax.
+import asyncio # `asyncio` is a library to write concurrent code using the async/await syntax.
 from scraper import VideoScraper # Import the VideoScraper class from the scraper module.
 from utils import setup_logging, validate_config # Import the setup_logging and validate_config functions from the utils module.
 from storage import save_dataset # Import the save_dataset function from the storage module.
 import logging # The `logging` module defines functions and classes which implement a flexible event logging system for applications and libraries.
-from pwscraper.scraper import VideoScraper
-from pwscraper.utils import setup_logging, validate_config
-from pwscraper.storage import save_dataset
 
 logger = logging.getLogger(__name__) # Create a logger instance for the main module.
 
