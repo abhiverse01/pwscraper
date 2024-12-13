@@ -1,3 +1,11 @@
 2024-12-12 15:33:22,316 - INFO - Starting the scraping process.
 2024-12-12 15:33:23,354 - WARNING - No data was scraped. Exiting.
 2024-12-12 15:33:23,354 - INFO - Scraping process finished.
+2024-12-12 15:46:53,170 - INFO - Starting the scraping process.
+2024-12-12 15:46:53,171 - INFO - Configuration loaded successfully: [{'name': 'YouTube', 'url': 'https://www.youtube.com/watch?v=klozZP1Wf8g', 'scrape_limit': 100}]
+2024-12-12 15:46:54,057 - WARNING - No data was scraped. Exiting.
+2024-12-12 15:46:54,057 - INFO - Scraping process finished.
+2024-12-12 15:47:17,349 - INFO - Starting the scraping process.
+2024-12-12 15:47:17,349 - INFO - Configuration loaded successfully: [{'name': 'YouTube', 'url': 'https://www.youtube.com/watch?v=klozZP1Wf8g', 'scrape_limit': 100}]
+2024-12-12 15:47:18,512 - WARNING - No data was scraped. Exiting.
+2024-12-12 15:47:18,512 - INFO - Scraping process finished.
