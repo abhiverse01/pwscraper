@@ -1,8 +1,8 @@
 {
     "platforms": [
         {
-            "name": "YouTube",
-            "url": "https://www.youtube.com/watch?v=klozZP1Wf8g",
+            "name": "Pixabay",
+            "url": "https://pixabay.com/images/search/people/",
             "scrape_limit": 100
         }
     ]
