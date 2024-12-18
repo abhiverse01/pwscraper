@@ -1,5 +1,3 @@
-# pwscraper/scraper.py
-
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
@@ -10,7 +8,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
-class VideoScraper:
+class PixabayScraper:
     def __init__(self, platforms_config, output_dir):
         self.platforms = platforms_config["platforms"]
         self.output_dir = output_dir
@@ -22,51 +20,64 @@ class VideoScraper:
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=1, max=10))
     async def fetch_page(self, session: aiohttp.ClientSession, url: str) -> str:
         try:
-            async with session.get(url) as response:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Referer': 'https://pixabay.com/',  # Add a referer header to make it more legitimate
+                'Upgrade-Insecure-Requests': '1',
+                'TE': 'Trailers'
+            }
+            async with session.get(url, headers=headers) as response:
                 if response.status == 429:
                     raise Exception("Rate limit exceeded. Retrying...")
-                response.raise_for_status()
+                response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
                 return await response.text()
         except Exception as e:
             logger.error(f"Failed to fetch {url}: {e}")
             raise
 
-    async def scrape_youtube(self, session, platform):
-        videos = []
+    async def scrape_pixabay(self, session, platform):
+        images = []
         try:
             html = await self.fetch_page(session, platform["url"])
             soup = BeautifulSoup(html, "html.parser")
 
-            for video_tag in soup.find_all("a", href=True, class_="yt-simple-endpoint style-scope ytd-video-renderer"):
-                title = video_tag.get("title", "No title available")
-                video_url = f"https://www.youtube.com{video_tag['href']}"
-                videos.append({"title": title, "url": video_url, "description": "Use YouTube API for descriptions"})
-        except Exception as e:
-            logger.error(f"Error scraping YouTube: {e}")
-        return videos
+            # Find the images in the mediaSection
+            media_section = soup.find_all("div", class_="mediaSection--yiQ4N")
+            for item in media_section:
+                img_tag = item.find("img")
+                if img_tag and img_tag.has_attr('src'):
+                    img_url = img_tag['src']
+                    alt_text = img_tag.get('alt', 'No alt text')
+                    title = img_tag.get('title', 'No title')
 
-    async def scrape_generic(self, session, platform):
-        videos = []
-        try:
-            html = await self.fetch_page(session, platform["url"])
-            soup = BeautifulSoup(html, "html.parser")
+                    # Get description, heading, and additional metadata
+                    description_section = item.find_next("div", class_="descriptionSection--HSyfs")
+                    description = description_section.get_text(strip=True) if description_section else "No description"
 
-            for video_tag in soup.find_all("div", class_="video-item"):
-                title = video_tag.find("h3").text.strip()
-                description = video_tag.find("p", class_="description").text.strip()
-                video_url = video_tag.find("a", class_="video-link")["href"]
-                videos.append({"title": title, "description": description, "url": video_url})
+                    heading_section = item.find_next("div", class_="headingRow--MzaSD")
+                    heading = heading_section.get_text(strip=True) if heading_section else "No heading"
+
+                    images.append({
+                        "title": title,
+                        "alt_text": alt_text,
+                        "description": description,
+                        "heading": heading,
+                        "url": img_url
+                    })
         except Exception as e:
-            logger.error(f"Error scraping {platform['name']}: {e}")
-        return videos
+            logger.error(f"Error scraping Pixabay: {e}")
+        return images
 
     async def scrape_platform(self, session, platform):
         parsed_url = urlparse(platform["url"])
         async with self.semaphore:  # Respect concurrency limit
-            if "youtube.com" in parsed_url.netloc:
-                return await self.scrape_youtube(session, platform)
+            if "pixabay.com" in parsed_url.netloc:
+                return await self.scrape_pixabay(session, platform)
             else:
-                return await self.scrape_generic(session, platform)
+                return []
 
     async def run(self):
         tasks = []
@@ -91,3 +102,19 @@ class VideoScraper:
                 seen.add(item["url"])
                 deduplicated.append(item)
         return deduplicated
+
+# Example configuration and usage
+if __name__ == "__main__":
+    platforms_config = {
+        "platforms": [
+            {"name": "Pixabay", "url": "https://pixabay.com/images/search/people/"}  # Replace with the actual URL you want to scrape
+        ]
+    }
+    output_dir = "output_images"
+    
+    scraper = PixabayScraper(platforms_config, output_dir)
+    results = asyncio.run(scraper.run())
+
+    # Process the results (e.g., save images or print the data)
+    for result in results:
+        print(result)
