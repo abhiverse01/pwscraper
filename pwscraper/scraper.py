@@ -5,8 +5,17 @@ from urllib.parse import urlparse
 from tenacity import retry, stop_after_attempt, wait_exponential
 import logging
 import os
+import random
 
 logger = logging.getLogger(__name__)
+
+# A few common user agents for rotating
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+]
 
 class PixabayScraper:
     def __init__(self, platforms_config, output_dir):
@@ -20,23 +29,43 @@ class PixabayScraper:
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=1, max=10))
     async def fetch_page(self, session: aiohttp.ClientSession, url: str) -> str:
         try:
+            # Randomly select a user agent for each request to simulate different browsers
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'User-Agent': random.choice(USER_AGENTS),
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Connection': 'keep-alive',
-                'Referer': 'https://pixabay.com/',  # Add a referer header to make it more legitimate
+                'Referer': 'https://pixabay.com/',
                 'Upgrade-Insecure-Requests': '1',
                 'TE': 'Trailers'
             }
-            async with session.get(url, headers=headers) as response:
-                if response.status == 429:
-                    raise Exception("Rate limit exceeded. Retrying...")
+
+            # Set a timeout to avoid hanging indefinitely
+            async with session.get(url, headers=headers, timeout=10) as response:
+                if response.status == 403:
+                    raise Exception("403 Forbidden - The server rejected the request.")
                 response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
                 return await response.text()
         except Exception as e:
             logger.error(f"Failed to fetch {url}: {e}")
             raise
+
+    async def download_image(self, session, image_url, title):
+        try:
+            async with session.get(image_url) as response:
+                response.raise_for_status()  # Will raise an exception for 4xx/5xx
+                content = await response.read()
+
+                # Generate file path to save the image
+                file_name = f"{title}.jpg"
+                file_path = os.path.join(self.output_dir, file_name)
+
+                # Write the content to the file
+                with open(file_path, "wb") as f:
+                    f.write(content)
+                logger.info(f"Downloaded: {file_name}")
+        except Exception as e:
+            logger.error(f"Failed to download {image_url}: {e}")
 
     async def scrape_pixabay(self, session, platform):
         images = []
@@ -67,6 +96,9 @@ class PixabayScraper:
                         "heading": heading,
                         "url": img_url
                     })
+
+                    # Download the image
+                    await self.download_image(session, img_url, title)
         except Exception as e:
             logger.error(f"Error scraping Pixabay: {e}")
         return images
