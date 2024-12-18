@@ -7,6 +7,9 @@ from utils import setup_logging, validate_config # Import the setup_logging and 
 from storage import save_dataset # Import the save_dataset function from the storage module.
 import logging # The `logging` module defines functions and classes which implement a flexible event logging system for applications and libraries.
 
+# main.py
+from pwscraper.scraper import PixabayScraper
+
 logger = logging.getLogger(__name__) # Create a logger instance for the main module.
 
 async def main():
